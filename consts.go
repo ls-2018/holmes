@@ -98,7 +98,7 @@ const (
 	cgroupCpuPeriodPath = "/sys/fs/cgroup/cpu/cpu.cfs_period_us"
 )
 
-const minCollectCyclesBeforeDumpStart = 10
+const minCollectCyclesBeforeDumpStart = 10 // 在dump前,要收集的数据量
 
 const (
 	// TrimResultTopN trimResult return only reserve the top n.

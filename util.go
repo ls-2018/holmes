@@ -109,7 +109,7 @@ func getUsage() (float64, uint64, int, int, error) {
 	return cpuPercent, rss, gNum, tNum, nil
 }
 
-// get cpu core number limited by CGroup.
+// 获取CGroup限定的cpu核数。
 func getCGroupCPUCore() (float64, error) {
 	var cpuQuota uint64
 
@@ -150,9 +150,8 @@ func getThreadNum() int {
 	return pprof.Lookup("threadcreate").Count()
 }
 
-// cpu mem goroutine thread err.
 func collect(cpuCore float64, memoryLimit uint64) (int, int, int, int, error) {
-	cpu, mem, gNum, tNum, err := getUsage()
+	cpu, mem, gNum, tNum, err := getUsage() // 当前的使用量
 	if err != nil {
 		return 0, 0, 0, 0, err
 	}

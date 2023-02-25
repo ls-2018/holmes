@@ -39,7 +39,7 @@ func main() {
 		holmes.WithDumpPath("./tmp"),
 		holmes.WithLogger(holmes.NewFileLog("./tmp/holmes.log", mlog.DEBUG)),
 		holmes.WithTextDump(),
-		holmes.WithMemDump(3, 25, 80, time.Minute),
+		holmes.WithMemDump(3, 25, 80, time.Second),
 	)
 	h.EnableMemDump().Start()
 	time.Sleep(time.Hour)

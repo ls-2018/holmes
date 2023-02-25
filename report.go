@@ -17,31 +17,20 @@ type rptEvent struct {
 	Scene      Scene
 }
 
-// Scene contains the scene information when profile triggers,
-// including current value, average value and configurations.
+// Scene 包含profile触发时的场景信息，包括当前值、平均值和配置。
 type Scene struct {
 	typeOption
-
-	// current value while dump event occurs
-	CurVal int
-	// Avg is the average of the past values
-	Avg int
+	CurVal int // dump时的值
+	Avg    int // Avg是过去值的平均值
 }
 
 type ReasonType uint8
 
 const (
-	// ReasonCurlLessMin means current value is less than min value.
 	ReasonCurlLessMin ReasonType = iota
-	// ReasonCurlGreaterMin means current value is greater than min value,
-	// but don't meet any trigger conditions.
 	ReasonCurlGreaterMin
-	// ReasonCurGreaterMax means current value is greater than max value.
 	ReasonCurGreaterMax
-	// ReasonCurGreaterAbs means current value meets the trigger condition where
-	// it is greater than abs value.
 	ReasonCurGreaterAbs
-	// ReasonDiff means current value is greater than the value: (diff + 1) * agv.
 	ReasonDiff
 )
 

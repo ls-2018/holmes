@@ -32,8 +32,8 @@ import (
 type Holmes struct {
 	opts *options
 
-	// stats
-	collectCount             int
+	// 计数器
+	collectCount             int // 收集指标的统计次数
 	gcCycleCount             int
 	threadTriggerCount       int
 	cpuTriggerCount          int
@@ -250,13 +250,12 @@ func (h *Holmes) Stop() {
 }
 
 func (h *Holmes) startDumpLoop() {
-	// init previous cool down time
+	// 初始化 上次冷却时间
 	now := time.Now()
 	h.cpuCoolDownTime = now
 	h.memCoolDownTime = now
 	h.grCoolDownTime = now
 
-	// init stats ring
 	h.cpuStats = newRing(minCollectCyclesBeforeDumpStart)
 	h.memStats = newRing(minCollectCyclesBeforeDumpStart)
 	h.grNumStats = newRing(minCollectCyclesBeforeDumpStart)
@@ -275,7 +274,7 @@ func (h *Holmes) startDumpLoop() {
 			// caches the variable to be lopped and then it can't be overwritten
 			itv := h.opts.CollectInterval
 			h.Infof("[Holmes] collect interval is resetting to [%v]\n", itv) //nolint:forbidigo
-			ticker = time.NewTicker(itv)
+			ticker.Reset(itv)
 
 		default:
 			// bug fix: https://github.com/mosn/holmes/issues/63
@@ -287,19 +286,19 @@ func (h *Holmes) startDumpLoop() {
 				return
 			}
 
-			cpuCore, err := h.getCPUCore()
+			cpuCore, err := h.getCPUCore() // 获取可用的CPU核数
 			if cpuCore == 0 || err != nil {
 				h.Errorf("[Holmes] get CPU core failed, CPU core: %v, error: %v", cpuCore, err)
 				return
 			}
 
-			memoryLimit, err := h.getMemoryLimit()
+			memoryLimit, err := h.getMemoryLimit() // 获取可用的内存大小
 			if memoryLimit == 0 || err != nil {
 				h.Errorf("[Holmes] get memory limit failed, memory limit: %v, error: %v", memoryLimit, err)
 				return
 			}
 
-			cpu, mem, gNum, tNum, err := collect(cpuCore, memoryLimit)
+			cpu, mem, gNum, tNum, err := collect(cpuCore, memoryLimit) // 获取使用量信息
 			if err != nil {
 				h.Errorf("failed to collect resource usage: %v", err.Error())
 
@@ -326,11 +325,11 @@ func (h *Holmes) startDumpLoop() {
 				continue
 			}
 
-			h.memCheckAndDump(mem)
-			h.cpuCheckAndDump(cpu)
-			h.threadCheckAndDump(tNum)
+			h.memCheckAndDump(mem)     // ✅
+			h.cpuCheckAndDump(cpu)     // ✅
+			h.threadCheckAndDump(tNum) // ✅
 			h.threadCheckAndShrink(tNum)
-			h.goroutineCheckAndDump(gNum)
+			h.goroutineCheckAndDump(gNum) // ✅
 		}
 	}
 }
@@ -391,7 +390,7 @@ func (h *Holmes) memCheckAndDump(mem int) {
 	}
 
 	if h.memCoolDownTime.After(time.Now()) {
-		h.Debugf("[Holmes] mem dump is in cooldown")
+		h.Debugf("[Holmes] mem dump is in 冷却期[一段时间内,不能再dump]")
 		return
 	}
 	// memOpts is a struct, no escape.
@@ -476,11 +475,7 @@ func (h *Holmes) threadCheckAndDump(threadNum int) {
 	if triggered := h.threadProfile(threadNum, threadOpts); triggered {
 		h.threadCoolDownTime = time.Now().Add(threadOpts.CoolDown)
 		h.threadTriggerCount++
-
-		// optimize: https://github.com/mosn/holmes/issues/84
-		// Thread dump information contains goroutine information
-		// skip goroutine dump
-		h.goroutineCoolDownByThread()
+		h.goroutineCoolDownByThread() // 线程dump信息包含goroutine信息,跳过goroutine转储
 	}
 }
 
@@ -698,6 +693,7 @@ func (h *Holmes) gcHeapCheckAndDump() {
 	}
 }
 
+// 获取可用的CPU核数
 func (h *Holmes) getCPUCore() (float64, error) {
 	if h.opts.cpuCore > 0 {
 		return h.opts.cpuCore, nil
@@ -708,7 +704,7 @@ func (h *Holmes) getCPUCore() (float64, error) {
 	}
 
 	if h.opts.UseCGroup {
-		return getCGroupCPUCore()
+		return getCGroupCPUCore() // 获取CGroup限定的cpu核数。
 	}
 
 	return float64(runtime.NumCPU()), nil

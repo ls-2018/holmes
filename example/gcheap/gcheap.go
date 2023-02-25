@@ -20,8 +20,11 @@ package main
 import (
 	"fmt"
 
+<<<<<<< HEAD
 	mlog "mosn.io/pkg/log"
 
+=======
+>>>>>>> 60b3f24 (over)
 	//"mosn.io/holmes/reporters/http_reporter"
 	"math/rand"
 	"net/http"

@@ -35,18 +35,10 @@ type options struct {
 	memoryLimit uint64
 	cpuCore     float64
 
-	*ShrinkThrOptions
-
-	*DumpOptions
-
-	// interval for dump loop, default 5s
-	CollectInterval   time.Duration
+	CollectInterval   time.Duration // 内部dump循环,间隔5s
 	intervalResetting chan struct{}
 
-	// if current cpu usage percent is greater than CPUMaxPercent,
-	// holmes would not dump all types profile, cuz this
-	// move may result of the system crash.
-	CPUMaxPercent int
+	CPUMaxPercent int // 如果当前cpu使用率百分比大于CPUMaxPercent, holmes不会转储所有类型的配置文件，因为这一举动可能会导致系统崩溃。
 
 	// if write lock is held mean holmes's
 	// configuration is being modified.
@@ -56,12 +48,13 @@ type options struct {
 	// interval for cooldown，default 1m
 	// each check type have different cooldowns of their own
 
-	grOpts *grOptions
-
-	memOpts    *typeOption
-	gCHeapOpts *typeOption
-	cpuOpts    *typeOption
-	threadOpts *typeOption
+	grOpts            *grOptions  // 采集协程信息
+	memOpts           *typeOption // 采集内存信息
+	gCHeapOpts        *typeOption // 采集gc堆栈信息
+	cpuOpts           *typeOption //
+	threadOpts        *typeOption // 线程信息
+	*ShrinkThrOptions             // 减少线程
+	*DumpOptions
 
 	// profile reporter
 	rptOpts *ReporterOptions
@@ -82,9 +75,8 @@ func newReporterOpts() *ReporterOptions {
 // DumpOptions contains configuration about dump file.
 type DumpOptions struct {
 	// full path to put the profile files, default /tmp
-	DumpPath string
-	// default dump to binary profile, set to true if you want a text profile
-	DumpProfileType dumpProfileType
+	DumpPath        string
+	DumpProfileType dumpProfileType // 默认转储为二进制配置文件，如果您想要文本配置文件，则设置为true
 	// only dump top 10 if set to false, otherwise dump all, only effective when in_text = true
 	DumpFullStack bool
 	// dump profile to logger. It will make huge log output if enable DumpToLogger option. issues/90
@@ -292,16 +284,16 @@ func WithDumpToLogger(new bool) Option {
 type typeOption struct {
 	Enable bool
 	// mem/cpu/gcheap trigger minimum in percent, goroutine/thread trigger minimum in number
-	TriggerMin int
+	TriggerMin int // 触发的最小值
 
 	// mem/cpu/gcheap trigger abs in percent, goroutine/thread trigger abs in number
-	TriggerAbs int
+	TriggerAbs int // 触发值
 
 	// mem/cpu/gcheap/goroutine/thread trigger diff in percent
-	TriggerDiff int
+	TriggerDiff int // 变化百分比
 
 	// CoolDown skip profile for CoolDown time after done a profile
-	CoolDown time.Duration
+	CoolDown time.Duration // 收集信息冷却期
 }
 
 func newTypeOpts(triggerMin, triggerAbs, triggerDiff int, coolDown time.Duration) *typeOption {
@@ -320,8 +312,8 @@ func (base *typeOption) Set(min, abs, diff int, coolDown time.Duration) {
 
 // newMemOptions
 // enable the heap dumper, should dump if one of the following requirements is matched
-//   1. memory usage > TriggerMin && memory usage diff > TriggerDiff
-//   2. memory usage > TriggerAbs.
+//  1. memory usage > TriggerMin && memory usage diff > TriggerDiff
+//  2. memory usage > TriggerAbs.
 func newMemOptions() *typeOption {
 	return newTypeOpts(
 		defaultMemTriggerMin,
@@ -331,7 +323,7 @@ func newMemOptions() *typeOption {
 	)
 }
 
-// WithMemDump set the memory dump options.
+// WithMemDump 设置内存转储选项
 func WithMemDump(min int, diff int, abs int, coolDown time.Duration) Option {
 	return optionFunc(func(opts *options) (err error) {
 		opts.memOpts.Set(min, abs, diff, coolDown)
@@ -341,8 +333,9 @@ func WithMemDump(min int, diff int, abs int, coolDown time.Duration) Option {
 
 // newGCHeapOptions
 // enable the heap dumper, should dump if one of the following requirements is matched
-//   1. GC heap usage > TriggerMin && GC heap usage diff > TriggerDiff
-//   2. GC heap usage > TriggerAbs
+//  1. GC heap usage > TriggerMin && GC heap usage diff > TriggerDiff
+//  2. GC heap usage > TriggerAbs
+//
 // in percent.
 func newGCHeapOptions() *typeOption {
 	return newTypeOpts(
@@ -353,7 +346,7 @@ func newGCHeapOptions() *typeOption {
 	)
 }
 
-// WithGCHeapDump set the GC heap dump options.
+// WithGCHeapDump 设置GC堆 存储选项
 func WithGCHeapDump(min int, diff int, abs int, coolDown time.Duration) Option {
 	return optionFunc(func(opts *options) (err error) {
 		opts.gCHeapOpts.Set(min, abs, diff, coolDown)
@@ -398,8 +391,9 @@ func WithThreadDump(min, diff, abs int, coolDown time.Duration) Option {
 // newCPUOptions
 // enable the cpu dumper, should dump if one of the following requirements is matched
 // in percent
-//   1. cpu usage > CPUTriggerMin && cpu usage diff > CPUTriggerDiff
-//   2. cpu usage > CPUTriggerAbs
+//  1. cpu usage > CPUTriggerMin && cpu usage diff > CPUTriggerDiff
+//  2. cpu usage > CPUTriggerAbs
+//
 // in percent.
 func newCPUOptions() *typeOption {
 	return newTypeOpts(
